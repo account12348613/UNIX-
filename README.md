@@ -1,6 +1,6 @@
 - 👋 Hi, I’m @account12348613
-- 👀 I’m interested in 嵌入式开发
-- 🌱 I’m currently learning unix高级编程
+- 👀 I’m interested in 
+- 🌱 I’m currently learning 
 - 💞️ I’m looking to collaborate on ...
 - 📫 How to reach me ...
 
