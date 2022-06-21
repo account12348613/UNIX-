@@ -120,4 +120,102 @@ int main()
    STDIN_FILENO、STDOUT_FILENO在头文件<unistd.h>中，典型值是0、1。
    read、write也在此头文件中，read返回读取到的字节数，到达文件尾端时返回0，读错误返回-1。
   
+  标准I/O（带缓存）
+  标准I/O函数提供对不带缓存的I/O函数的带缓存的界面，使用标准I/O不需要担心如何选取最佳的缓存长度
+  最熟悉的标准I/O函数是printf，头文件<stdio.h>包含了所有标准I/O函数的原型
   
+  代码：从标准输入复制到标准输出
+  
+*****************************************************
+#include <stdio.h>
+
+int main()
+{
+    int c;
+    while((c = getc(stdin)) != EOF)
+    {
+        if(putc(c, stdout)==EOF)
+            printf("output err!\n");
+    }
+
+    if(ferror(stdin))
+        printf("input err!\n");
+
+    return 0;
+}
+*****************************************************
+  函数getc一次读一个字符
+  函数putc输出字符到标准输出
+  读到最后一个字节时getc返回常数EOF（-1）
+  标准输入、输出常数 stdin、stdout 定义在头文件<stdio.h>中
+  
+  
+5.程序和进程
+
+  程序
+  存放在磁盘文件中的可执行文件
+  
+  进程和进程ID
+  程序的执行实例为进程，或者用 任务 来表示正在被执行的程序
+  每个进程都一定有一个唯一的数字标识符（进程ID），非负整数
+  
+  代码：打印进程ID
+*****************************************************
+#include <stdio.h>
+#include <unistd.h>
+int main()
+{
+    printf("process id = %d\n",getpid());
+    return 0;
+}
+*****************************************************
+  getpid()函数获取当前进程的进程ID
+  
+  
+  进程控制
+  主要函数：fork(),exec(),waitpid()
+  代码：从标准输入读取命令并执行
+*****************************************************
+#include <stdio.h>
+#include <unistd.h>//getpid(),pid_t
+#include <string.h>//strlen()
+#include <stdlib.h>//exit()
+#include <sys/wait.h>//waitpid()
+#define BUFFSIZE 8192
+int main()
+{
+    char buf[BUFFSIZE];
+    pid_t pid;
+    int status;
+
+    printf("%% ");
+    while(fgets(buf, BUFFSIZE, stdin) != NULL)
+    {
+        buf[strlen(buf) - 1] = 0;
+
+        if((pid = fork())<0)
+            printf("fork err\n");
+
+        else if(pid == 0)
+        {
+            execlp(buf, buf, (char *) 0);
+            printf("can't execute: %s\n",buf);
+            exit(127);
+        }
+        if((pid = waitpid(pid, &status, 0)) < 0)
+        {
+            printf("wait pid err\n");
+        }
+        printf("%% ");
+    }
+    return 0;
+}
+*****************************************************
+  用标准I/O函数fgets()从标准输入一次读取一行
+  当输入文件结束符（通常是ctrl+D）时，fgets()函数返回null指针，循环终止，则进程也终止。
+  因为fgets()返回的每一行都以新行符终止，然后人为添加一个null字节，所以使用strlen()函数计算该字符串长度
+  因为execlp()函数要求的是以null为结束的参数，而不是新行。所以此处用null代替新行符。
+  fork()函数创建一个新进程，新进程为父进程的复制品。fork()函数返回两次，分别在父、子进程返回一次，在父进程返回子进程的进程ID，在子进程返回0。
+  此处创建子进程来执行标准输入的命令。
+  父进程通过waitpid()函数等待子进程终止，并获取子进程终止时的状态status。
+  此函数使用了 % 作为命令提示符。
