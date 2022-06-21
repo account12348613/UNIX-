@@ -19,3 +19,24 @@ int main(int argc, char *argv[])
     closedir(dp);
     return 0;
 }
+/*
+use case
+
+abc@ubuntu:~/Desktop$ pwd
+/home/abc/Desktop
+abc@ubuntu:~/Desktop$ ./a.out /home/abc/Desktop/
+clion
+ipc_pipe.c
+my_ls.c
+.
+..
+my_socket
+linux study
+my_std_i2o.c
+a.out
+codeblocks
+abc@ubuntu:~/Desktop$ 
+
+*/
+
+
