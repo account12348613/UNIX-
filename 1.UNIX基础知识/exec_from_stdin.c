@@ -1,5 +1,5 @@
-#include <stdio.h>
-#include <unistd.h>//getpid(),pid_t
+#include <stdio.h>//fgets()
+#include <unistd.h>//getpid(),pid_t,execlp()
 #include <string.h>//strlen()
 #include <stdlib.h>//exit()
 #include <sys/wait.h>//waitpid()
@@ -26,7 +26,7 @@ int main()
         }
         if((pid = waitpid(pid, &status, 0)) < 0)
         {
-            printf("wait pid err\n");
+            printf("wait pid err %d\n",status);
         }
         printf("%% ");
     }
