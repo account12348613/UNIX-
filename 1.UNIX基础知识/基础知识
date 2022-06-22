@@ -275,3 +275,86 @@ int main(int argc, char *argv[])
 }
 *****************************************************
   
+8.用户标识
+
+    用户ID
+    口令文件中的用户ID是个数值，用于标识系统中不同的用户。系统管理员在确定一个用户的登录名时，就分配了一个用户ID标识该用户。
+    用户不能修改自身的用户ID，通常情况下，用户只有一个用户ID。
+    用户ID为0的用户为根(root)或者超级用户(superuser)
+    当一个进程拥有超级用户权限时，大多数的文件都不进行许可权检查，某些文件只向超级用户提供，超级用户对系统拥有自由的支配权。
+    代码：打印用户ID和用户组ID
+*****************************************************
+#include <stdio.h>
+#include <unistd.h>//getuid,getgid
+int main()
+{
+    printf("uid = %d, gid = %d\n",getuid(), getgid());
+    return 0;
+}
+*****************************************************
+
+    组ID
+    口令文件中也包含组ID，也是个数值。由系统管理员在确定用户登录名时分配。
+    一般来说，口令文件值的多个记录项可以具有相同的组ID。
+    unix中，组 被用于把若干用户 划分到 某个课题或部门中。使得同组的各个成员可以共享资源
+    组文件把组名 映射为 数字组ID，通常是/etc/group。
+    系统中的每个文件都包括该文件的所有者的用户ID和组ID。
+    因为对于用户而言，使用名字比使用数值方便，所以口令文件包含登录名和用户ID的映射关系；组文件包含了组名和组ID的映射关系。
+    命令：ls -l 使用口令文件把数值用户ID映射为登录名，再打印文件的所有者的登陆名。
+
+    添加组ID
+    unix允许用户属于多个组。
+    登录时，读文件/etc/group，遍历列有该用户作为其成员的前16个登录项，就可以得到该用户的添加组ID。
+
+9.信号
+    信号是 通知进程发生了某种条件的技术，比如：除数为0，则把SIGFPE信号发送给该进程。
+    信号的处理：
+        1.忽略
+        2.按系统默认方式处理
+        3.提供处理函数
+    信号的产生：
+        1.键盘方式：中断键（CTRL C）和退出键（CTRL \）
+        2.kill函数
+        发送信号的限制：我们必须是该进程的所有者。
+    代码：使用signal()函数接收信号，并处理
+*****************************************************
+#include <stdio.h>
+#include <signal.h>
+#include <string.h>
+#include <unistd.h>
+#include <stdlib.h>
+#include <sys/wait.h>
+#define MAXLINE 8192
+void sig_intr(int signo)
+{
+    printf("recive a signal: %d\n",signo);
+}
+
+int main()
+{
+    char buf[MAXLINE];
+    pid_t pid;
+    int status;
+
+    printf("%% ");
+    if(signal(SIGINT, sig_intr) == SIG_ERR)
+        perror("signal");
+    while(fgets(buf, MAXLINE, stdin)!=NULL)
+    {
+        buf[strlen(buf)-1] = 0;
+        if((pid = fork()) <0)
+            perror("fork");
+        else if (pid == 0)
+        {
+            execlp(buf, buf, (char *)0);
+            perror("execlp");
+            exit(127);
+        }
+
+        if((pid = waitpid(pid, &status, 0))<0)
+            perror("waitpid");
+        printf("%% ");
+    }
+    return 0;
+}
+*****************************************************
