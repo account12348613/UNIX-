@@ -219,3 +219,59 @@ int main()
   此处创建子进程来执行标准输入的命令。
   父进程通过waitpid()函数等待子进程终止，并获取子进程终止时的状态status。
   此函数使用了 % 作为命令提示符。
+  
+  
+6.ANSI C
+  
+  函数原型
+  例子：头文件<unistd.h>中
+  ssize_t read(int, void *, size_t);
+  ssize_t write(int, const void *, size_t);
+  pid_t getpid(void);
+  getpid没有参数（void），返回值类型为pid_t。
+  提供函数原型后，编译程序在编译时检查调用函数是否使用了正确的参数
+  
+  
+  类属指针
+  read和write函数的第二个参数是void *类型，ANSI C使用类属指针来代替char *。
+  函数原型和类属指针的组合省去了编译过程中的 显式类型 的 强制转换
+  例子：将void *用于malloc函数
+  函数原型：void * malloc（size_t）；
+  函数调用：
+    int *ptr;
+    ptr = malloc(1000 * sizeof(int));
+  malloc函数返回时无需强制转换为int *类型。
+  
+  
+  原始系统数据类型
+  以_t结尾的这些数据类型被称为 原始系统数据类型。通常在头文件<sys/types.h>中定义（头文件<unistd.h>包含此头文件）
+  目的是为了适配不同的操作系统，防止一固定的数据类型在不同系统中使用
+  
+  
+7.出错处理
+  unix函数出错时，通常返回一个负值。整型变量errrno通常设置为具有特定信息的一个值
+  例子：open函数执行成功返回一个非负的文件描述符，出错则返回-1，open出错后，约有15种不同的errno值
+  例子：某些函数并不返回负值，而是返回null指针。
+  头文件<errno.h>中定义了变量errno，和可赋值给它的各种常数，这些常数都以E开头，比如：EACCES，表示产生了权限问题。
+  errno的两条规则：
+    1.没有出错时，其值不会被例程清除。所以在哈桑农户除左时，才检验其值。
+    2.任何函数不会将errno的值设置为0，头文件<errno.h>定义的所有常数都不为0.
+  C标准定义了两个函数，用于打印出错信息：
+    1.头文件<string.h>中 char *strerror(int errno); 将errno的值映射为以出错信息的字符串，并返回此字符串的指针。
+    2.头文件<stdio.h>中 void perror(const char *msg); 先输出msg指向的字符串，然后是一个冒号，一个空格，然后时对应errno值的出错信息，然后加上一个新行符。
+  代码：展示这两种出错函数的使用方法。
+*****************************************************
+#include <stdio.h>
+#include <string.h>//strerror()
+#include <errno.h>//EACCES
+int main(int argc, char *argv[])
+{
+    //output error message to stderr
+    fprintf(stderr, "EACCES: %s\n",strerror(EACCES));
+
+    errno = ENOENT;
+    perror(argv[0]);
+    return 0;
+}
+*****************************************************
+  
