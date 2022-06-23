@@ -7,7 +7,41 @@
         0，标准输入
         1，标准输出
         2，标标准出错
+    头文件<unistd.h>中把幻数0、1、2 用STDIN_FILENO、STDOUT_FILENO、STDERR_FILENO替换
+
 2.open()函数
+    open()函数 创建、打开一个文件。
+    ########################################
+    #include <sys/types.h>
+    #include <sys/stat.h>
+    #include <fcntl.h>
+
+    int open(const char *pathname, int flags);
+    int open(const char *pathname, int flags, mote_t mode);//创建时，才使用第三个参数mode
+    ########################################
+    返回：若成功返回文件描述符，若出错则返回-1
+
+    pathname是要创建或打开的文件名
+    flags可使用以下选项：
+        O_RDONLY 只读打开，一般定义为 0
+        O_WRONLY 只写打开，一般定义为 1
+        O_RDWR   读写打开，一般定义为 2
+
+    这三个常数只能指定一个，但是下列常数是和选择的：
+        O_APPEND 写时追加到文件尾端
+        O_CREAT  文件不存在则创建文件
+        O_EXCL   检测文件是否存在，若同时指定了O_CREAT，则出错。
+        O_TRUNC  将已存在、且以只读或者只写打开的文件的长度截短为0
+        O_NOCTTY 如果pathname为终端设备，则不把这个设备分配给这个进程(如果指定STDOUT_FILENO，则这个进程的标准输出不再是STDOUT_FILENO)
+        O_NONBLOCK 如果pathname是FIFO、块特殊文件、字符特殊文件，则把此文件的本次打开操作和后续IO操作设置为非阻塞模式
+        O_SYNC   使得每次的write操作都等到物理的IO操作结束。
+
+    open()函数返回的描述符一定是 未使用的、最小的 描述符数字。
+    如果一个程序关闭了标准输出（描述符为1），再打开另外一个文件，则该文件会再描述符1上打开。
+
+    文件名和路径名截短
+        如果NAME_MAX为14个字符，我们创建了一个文件名长度为15个字符的时候，系统会返回ENAMETOOLONG的错误
+
 3.create()函数
 4.close()函数
 5.lseek()函数
