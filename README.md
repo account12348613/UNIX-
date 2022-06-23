@@ -1,8 +1,3 @@
-- 👋 Hi, I’m @account12348613
-- 👀 I’m interested in 
-- 🌱 I’m currently learning 
-- 💞️ I’m looking to collaborate on ...
-- 📫 How to reach me ...
 - 目前已完成第一章
 
 <!---
