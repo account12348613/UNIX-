@@ -1,1 +1,14 @@
-
+1.文件描述符
+2.open()函数
+3.create()函数
+4.close()函数
+5.lseek()函数
+6.read()函数
+7.write()函数
+8.I/O效率
+9.文件共享
+10.原子操作
+11.dup()和dup2()函数
+12.fcntl()函数
+13.ioctl()函数
+14./dev/fd
