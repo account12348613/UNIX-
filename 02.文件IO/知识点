@@ -231,9 +231,47 @@ int main()
         3.cmd = F_GETFL / F_SETFL           :获取/设置文件状态标志
         4.cmd = F_GETOWN / F_SETOWN         :获取/设置异步IO所有权
         5.cmd = F_GETLK / F_SETLK / SETLKW  :获取/设置记录锁
+        
     1.F_DUPFD 复制文件描述符fd，新文件描述符作为函数返回值返回。其值是尚未打开的各个描述符中>=第三个参数值中的最小值
         问题：返回值为什么不一定是第三个参数值，按照dup2()函数的功能，其返回值一定是第三个参数值。
         答：因为dup2()函数会把fd2给close掉，造成fd2未使用，所以fcntl()返回值才是fd2
-    2.
+    2.F_GETFD 对应于fd的文件描述符标志作为返回值返回，返回标志
+    3.F_SETFD 对于fd设置文件描述符标志。新标志位按第三个参数设置。当文件描述符标志为1时，exec时不关闭，为0则关闭。
+    4.F_GETFL 返回fd的文件状态标志(读、写等等)。
+    5.F_SETFL 设置fd的文件状态标志为第三个参数值。
+    6.F_GETOWN 获取接收SIGIO和SIGRG信号的进程ID或进程组ID。
+    7.F-SETOEN 设置接收SIGIO和SIGRG信号的进程ID或进程组ID，第三个参数指定一个进程ID，取参数的绝对值指定进程ID。
+
+    fcntl()函数的返回值于cmd参数有关。如果出错都返回-1。
+
+    代码：指定文件描述符的命令行参数，并获取文件的状态标志位。
+***********************************************************
+#include <fcntl.h>
+#include <stdio.h>
+#include <stdlib.h>
+int main(int argc, char *argv[])
+{
+    int fd;
+    int accmode;
+    if(argc!=2)
+        return -1;
+    if((fd = fcntl(atoi(argv[1]),F_GETFL, 0))<0)
+        printf("fcntl err\n");
+    accmode = fd & O_ACCMODE;
+    if(accmode & O_RDONLY)
+        printf("read only");
+    else if(accmode & O_WRONLY)
+        printf("write only");
+    else if(accmode & O_RDWR)
+        printf("read and write");
+
+    if(fd & O_APPEND)
+        printf(", append");
+    if(fd & O_NONBLOCK)
+        printf(", non block");
+    putchar('\n');
+    return 0;
+}
+***********************************************************
 13.ioctl()函数
 14./dev/fd
