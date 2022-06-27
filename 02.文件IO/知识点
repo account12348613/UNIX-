@@ -244,7 +244,7 @@ int main()
 
     fcntl()函数的返回值于cmd参数有关。如果出错都返回-1。
 
-    代码：指定文件描述符的命令行参数，并获取文件的状态标志位。
+    代码：指定文件描述符的命令行参数，并获取文件的状态标志位。见本目录代码3
 ***********************************************************
 #include <fcntl.h>
 #include <stdio.h>
@@ -273,5 +273,95 @@ int main(int argc, char *argv[])
     return 0;
 }
 ***********************************************************
+    代码运行结果：
+    abc@ubuntu:~/Desktop$ ./a.out 0 < /dev/tty
+
+    abc@ubuntu:~/Desktop$ ./a.out 1 >temp.foo
+    abc@ubuntu:~/Desktop$ cat temp.foo
+    write only
+    abc@ubuntu:~/Desktop$ ./a.out 2 2>>temp.foo
+    write only, append
+    abc@ubuntu:~/Desktop$ cat temp.foo
+    write only
+    abc@ubuntu:~/Desktop$ ./a.out 5 5<>temp.foo
+    read and write
+    abc@ubuntu:~/Desktop$
+    字句：5<>temp.foo 表示在文件描述符5上打开文件temp.foo以供读写。
+
+    一般在修改文件描述符标志和文件状态标志的时候需要先获取当前的标志，根据当前标志来设置新的标志。不只是简单的执行F_SETFD或F_SETFL命令。这样会关闭之前的标志位。
+    代码：对一个文件描述符设置文件状态标志(一个或多个)，见本目录代码4
+***********************************************************
+#include <fcntl.h>
+#include <stdio.h>
+
+void set_flags(int fd, int flags)
+{
+    int val;
+
+    if((val = fcntl(fd, F_GETFL, 0))<0)//先获取标志位
+    {
+        printf("fcntl F_GETFL err\n");
+    }
+    val |= flags;//修改标志位
+
+    if(fcntl(fd, F_SETFL, val)<0)//设置标志位
+        printf("fcntl F_SETFL err\n");
+}
+
+void unset_flags(int fd, int flags)
+{
+    int val;
+
+    if((val = fcntl(fd, F_GETFL, 0))<0)
+    {
+        printf("fcntl F_GETFL err\n");
+    }
+    val &= ~flags;
+
+    if(fcntl(fd, F_SETFL, val)<0)
+        printf("fcntl F_SETFL err\n");
+}
+***********************************************************
+    set_flags(STDOUT_FILENO, O_SYNC);打开了同步写的标志
+    同步写会造成每次write()都要等待，直到数据写到了磁盘上再返回。通常，write()只是将数据排入队列，实际的IO操作很可能在后面的某个时刻进行
+
+    fcntl()在只知道打开文件的描述符时可以修改其性质。pipe也是标识符，所以我们可以使用fcntl去操作。
+
 13.ioctl()函数
+    ioctl()函数是IO操作的杂物箱，几乎所有的IO操作都能用ioctl()函数表示，终端IO是ioctl()最大的使用方面。
+    #include <unistd.h>
+    #include <sys/ioctl.h>
+
+    int ioctl(int fd, int request,...);
+    省略号表示其余参数，一般只有一个 变量或者结构体的指针 参数
+    ioctl()操作分类如下：
+    类型          常数名         头文件         ioctl数
+    盘标号         DIOxxx       <disklabel.h> 10
+    文件IO        FIOxxx        <ioctl.h>     7
+    磁带IO        MTIOxxx       <mtio.h>      4
+    套接口IO      SIOxxx        <ioctl.h>      25
+    终端IO        TIOxxx        <ioctl.h>     35
+
+    上表可知，ioctl()对终端io操作最多。
+
 14./dev/fd
+    比较新的系统都提供/dev/fd/n的目录，其目录项n是名为0，1，2等的文件，代开文件/dev/fd/n等效于复制文件描述符n。
+    在函数中调用：
+    fd = open("/dev/fd/0", mode);
+    等效于：
+    fd = dup(0);
+    大多数系统忽略所指定的mode，另外一些则要求mode是打开文件时使用mode的子集。
+    例如：我们以 只读 打开描述符0，然后调用：
+    fd = open("/dev/fd/0", O_RDWR);//读写模式
+    即使成功，我们也不能对0进行 写 的操作
+
+    /dev/fd文件主要有shell使用，这就允许程序可以像对待其他路径名一样的方式使用路径名参数来处理标准输入和标准输出。
+    例子：cat程序将命令行中的一个单独的 - 特别解释为一个输入文件名，该文件指的是标准输入：
+    filter file2 | cat file1 - file3 | lpr
+    首先cat 读 file1，接着读标准输入（filter file2命令的输出），然后读file3，如果支持/dev/fd，则可以删除cat对 - 的特殊处理
+    filter file2 | cat file1 /dev/fd/0 file3 | lpr
+    在命令行中用 - 作为一个参数特指标准输入或者标准输出，但是这会带来些问题：如果使用 - 指定一个文件，那么它看起来就像开始了另外一个命令行的选项。
+    /dev/fd则提高了文件名参数的一致性，更加清晰。
+
+15.小结
+    传统的IO操作函数read和write都以为调用了系统调用而进入内核，所以称这些函数为 不带缓存的IO函数
