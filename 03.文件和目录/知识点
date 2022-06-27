@@ -1,0 +1,46 @@
+1.stat、fstat、lstat函数
+    #include <sys/types.h>
+    #include <sys/stat.h>
+
+    int stat(const char *pathname, struct stat *buf);
+    int fstat(int fd, struct stat *buf);
+    int lstat(const char *pathname, struct stat *buf);
+    返回值：成功返回0，出错返回-1
+
+    stat()函数返回一个与pathname文件有关的信息结构
+    fstat()函数获得文件描述符fd上文件的有关信息
+    lstat()函数类似于stat()，当pathname为一个符号连接时，返回该符号连接的有关信息，而不是该符号引用的文件的信息。
+
+    使用stat()函数最多的命令是ls -l命令，用其可以获得有关一个文件的所有信息。
+
+2.文件类型
+    1.普通文件
+    2.目录文件
+    3.字符特殊文件
+    4.块特殊文件
+    5.FIFO
+    6.套接口
+    7.符号连接
+3.设置用户ID和组ID
+4.文件存取许可权
+5.新文件和目录的所有权
+6.access函数
+7.umask函数
+8.chmode和fchmod函数
+9.粘住位
+10.chown、fchown和lchown函数
+11.文件长度
+12.文件截短
+13.文件系统
+14.link、unlink、remove、rename函数
+15.符号连接
+16.symlink、readlink函数
+17.文件的时间
+18.utime函数
+19.mkdir、rmdir函数
+20.读目录
+21.chdir、fchdir、getcwd函数
+22.特殊设备文件
+23.sync、fsync函数
+24.文件存取许可位小结
+25.小结
