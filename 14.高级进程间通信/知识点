@@ -2,9 +2,115 @@
     流管道是双向(全双工)管道，单个流管道就能向 父子进程之间提供双向的数据流
     代码：
 ***********************************************************
+#include <signal.h>
+#include <stdio.h>
+#include <unistd.h>
+#include <string.h>
+#include <stdlib.h>
+#include <sys/socket.h>
+#define MAX_LINE 8192
+static void sig_pipe(int signal);
+int main()
+{
+    int n, fd[2];
+    pid_t pid;
+    char line[MAX_LINE];
 
+    if(signal(SIGPIPE, sig_pipe) == SIG_ERR)
+        printf("signal err\n");
+    if(socketpair(AF_UNIX, SOCK_STREAM, 0, fd))             //创建流管道
+        printf("pipe err\n");
+
+    if((pid = fork())<0)
+        printf("fork err\n");
+    else if(pid > 0)                                        //parent
+    {
+        close(fd[1]);   //close send pipe
+        while(fgets(line, MAX_LINE, stdin) != NULL)         //标注输入到line
+        {
+            n = strlen(line);
+            printf("parent pid = %d send: %s",getpid(), line);
+            if(write(fd[0], line, n) != n)                  //写道流中
+                printf("p write err\n");
+
+            if((n = read(fd[0], line, MAX_LINE))<0)         //读取子进程处理结果
+                printf("p read err from pipe\n");
+            if(n == 0)
+                printf("p child pipe closed\n");
+
+            line[n] = 0;
+            printf("output: ");
+            if(fputs(line, stdout) ==EOF)                   //打印处理结果
+                printf("p fputs err\n");
+            //raise(SIGPIPE);
+        }
+        raise(SIGPIPE);
+        if(ferror(stdin))
+            printf("p fgets err on stdin\n");
+        exit(0);
+    }
+    else                    //child
+    {
+        close(fd[0]);       //close recive pipe
+
+        if(fd[1] != STDIN_FILENO)                               //关联fd[1]与stdin
+        {
+            if(dup2(fd[1], STDIN_FILENO) != STDIN_FILENO)
+                printf("c dup2 stdin err\n");
+        }
+
+        if(fd[1] != STDOUT_FILENO)                              //关联fd[1]与stdout
+        {
+            if(dup2(fd[1], STDOUT_FILENO) != STDOUT_FILENO)
+                printf("c dup2 stdout err\n");
+        }
+
+        if(execl("./add2", "add2", NULL)<0)                     //执行代码文件
+            printf("c execl err\n");
+    }
+
+    return 0;
+}
+
+static void sig_pipe(int signal)                                //在fd被关掉时，另外一个进程读写该fd会触发
+{
+    printf("SIGPIPE caught pid = %d\n",getpid());
+    exit(1);
+}
 ***********************************************************
+    父进程只使用fd[0]，子进程只使用fd[1]。
+    因为流管道的每一端都是全双工，所以父进程读写fd[0]，子进程将fd[1]与 标准输入和标准输出 关联
+
+    SRV4版本的全双工pipe():
+    pipe(fd);
+    4.3+BSD版本的全双工pipe();
+    socketpair(AF_UNIX, SOCK_STREAM, 0, fd);
+
 2.传送文件描述符
+    进程间传送打开的文件描述符能力很有用。
+    用此可以对 客户端/服务器应用 进行不同的设计。
+    它允许一个进程处理与 一个已经打开文件的所有操作，以及向调用进程返回一个描述符，该描述符可以被用于以后的所有IO函数。
+    打开 文件或者设备 的所有袭击对于客户端而言是透明的。
+
+    进一步说明：从一个进程向另外一个进程传送一个打开的文件描述符的含义。
+    当从一个进程向另外一个进程传递一个打开的文件描述符时，必须是这两个进程共享同一个文件表。
+    在技术上，发送进程实际上向接收进程传递了指向一个打开文件表的指针。
+    该指针被分配存在接收进程的第一个可用文件描述符项中。
+
+    当发送进程将描述符传递给接收进程后，通常将关闭该描述符。
+    关闭该描述符并不会造成关闭该文件或者设备，该文件或者设备仍为接收进程打开。
+
+    定义需要的函数:
+    int send_fd(int spipefd, int filedes);
+    int send_err(int spipefd, int status, const char *errmsg);
+    int recv_fd(int spipefd, ssize_t (*userfunc)(int STDERR_FILENO, const void *msg, size_t msg_lenth);
+
+    send_fd经由流管道spipefd发送描述符filedes。
+    send_err经由流管道spipefd发送errmsg和status，status的取值在-1~-255之间。
+
+    客户端通过recv_fd接收发送端（send_fd）发送的filedes描述符，如果一切正常，则描述符作为客户端的返回值，否则把status作为返回值。
+    如果服务器发送了一个条错误信息，客户端则调用userfunc去处理该消息。
+    
 3.open服务器第一版
 4.客户机-服务器连接函数
 5.open服务器第二版
