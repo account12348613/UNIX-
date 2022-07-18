@@ -15,13 +15,13 @@ int pthread_create(pthread_t *thread_id,
 线程的终止：
     start(arg)函数调用return语句返回。
     新线程调用pthread_exit()
-    调用pthread_cancel()取消进程
+    调用pthread_cancel()取消线程
     同一进程中的任意一个线程调用exit()后，或者主线程调用return语句后，该进程中所有的线程都将终止
 
     void pthread_exit(void *retval);
 
-    start()函数中调用pthread_exit()后，将终止该线程。其返回值retval可由其他线程通过pthread_join()函数来获取。
-    pthread_exit()与return的区别：
+    start()函数中调用pthread_exit()后，将终止该线程。
+    pthread_exit()与return的区别：其返回值retval可由其他线程通过pthread_join()函数来获取。
         pthread_exit()可在start()函数中任何位置终止进程，包括start()函数调用其他函数时，而return则需要在start()函数本体的最后。
 
     如果主线程调用了pthread_exit()，而不是调用exit()或者执行return语句，那么其他线程将继续运行。
@@ -57,6 +57,31 @@ int pthread_create(pthread_t *thread_id,
     retval为非空指针时，将会保存线程终止时返回值的拷贝。即线程执行return语句或者pthread_exit()时指定的值。
 
     不能连接一个已连接的线程ID，否则可能出现意料之外的情况，该线程ID可能分配给了新的线程。
+
+
+线程的分离
+    默认情况下，线程都是可以连接的，当线程退出时，其他线程可通过pthread_exit()获取返回状态。
+    如果不关心其状态，只希望线程退出时自动清理并移除。
+    可以调用pthread_detach()函数标记线程ID为分离状态。
+
+    int pthread_datach(pthread_t thread);
+    返回值0代表成功，出错返回一个正数。
+
+    pthread_detach(pthread_self());
+    将自己标记为分离状态。
+
+    一旦处于分离状态，就不能再连接该线程ID。
+
+线程和进程的优劣
+    1.线程间的数据共享很简单，进程需要IPC。
+    2.创建线程快于创建进程。
+
+    3.多线程编程要确保线程安全
+    4.某个线程中的bug可能危及该进程的所有线程，因为它们共享着相同的地址空间和其他属性
+    5.每个线程都争抢宿主进程有限的虚拟地址空间
+    6.多线程应用中处理信号，需要小心设计。
+    7.多线程应用，所有线程必须运行同一源程序文件。
+    8.线程还共享其他信息：文件描述符、信号处置、当前工作目录、用户ID、组ID。
 
 
 
