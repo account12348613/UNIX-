@@ -20,7 +20,7 @@ int pthread_create(pthread_t *thread_id,
 
     void pthread_exit(void *retval);
 
-    start()函数中调用pthread_exit()后，将终止该线程。
+    start()函数中调用pthread_exit()后，将终止该线程。其返回值retval可由其他线程通过pthread_join()函数来获取。
     pthread_exit()与return的区别：其返回值retval可由其他线程通过pthread_join()函数来获取。
         pthread_exit()可在start()函数中任何位置终止进程，包括start()函数调用其他函数时，而return则需要在start()函数本体的最后。
 
