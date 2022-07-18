@@ -1,1 +1,63 @@
 与进程（process）类似，线程（thread）是允许应用程序并发执行多个任务的一种机制。
+
+#include <pthread.h>
+
+int pthread_create(pthread_t *thread_id,
+                   const pthread_attr_t *attr,
+                   void *(*start)(void *),
+                   void *arg);
+    返回值0代表成功，一个正数代表出错
+
+        新的线程从start(arg)开始执行；
+        thread_id 是新线程的id，新线程可通过pthrad_self()函数获取该值。
+        线程的操作都是通过thread_id来进行。
+
+线程的终止：
+    start(arg)函数调用return语句返回。
+    新线程调用pthread_exit()
+    调用pthread_cancel()取消进程
+    同一进程中的任意一个线程调用exit()后，或者主线程调用return语句后，该进程中所有的线程都将终止
+
+    void pthread_exit(void *retval);
+
+    start()函数中调用pthread_exit()后，将终止该线程。其返回值retval可由其他线程通过pthread_join()函数来获取。
+    pthread_exit()与return的区别：
+        pthread_exit()可在start()函数中任何位置终止进程，包括start()函数调用其他函数时，而return则需要在start()函数本体的最后。
+
+    如果主线程调用了pthread_exit()，而不是调用exit()或者执行return语句，那么其他线程将继续运行。
+
+进程内部的线程都拥有一个唯一的标识，称为线程ID
+    线程ID会返回给pthread_create()的调用者，
+    一个线程可通过pthread_self()来获取自己的线程ID。
+
+    pthread_t pthread_self(void );
+    返回值为当前线程的ID
+
+    线程ID在应用程序非常有用：
+        可通过不同的pthreads函数利用线程ID来操作目标线程：
+            pthread_join()
+            pthread_detach()
+            pthread_cancel()
+            pthread_kill()
+            等等
+        通过线程ID来标识某些动态数据结构的标签，可识别该数据的创建者或者主线程，可确定对该数据结构的操作执行者。
+
+    检查两个线程ID是否相同:
+
+        int pthread_equal(pthread_t t1, pthread_t t2);
+        返回值0代表不等，相等返回非0值。
+
+连接joining已终止的线程
+    函数pthread_join()等待thread_id标识的线程终止。如果该线程已经终止，则pthread_join立即返回。
+
+    int pthread_join(pthread_t thread_id,
+                     void **retval);
+    返回值0代表成功，出错时返回一个正数。
+
+    retval为非空指针时，将会保存线程终止时返回值的拷贝。即线程执行return语句或者pthread_exit()时指定的值。
+
+    不能连接一个已连接的线程ID，否则可能出现意料之外的情况，该线程ID可能分配给了新的线程。
+
+
+
+
