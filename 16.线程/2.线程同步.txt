@@ -99,4 +99,26 @@ https://blog.csdn.net/guotianqing/article/details/79828100
 
 条件变量
     允许一个线程通知其他线程某个共享变量状态改变，并让其他线程阻塞等待这一通知。
-    
+    条件变量总是结合互斥量使用。
+
+    静态条件变量,初始化如下
+    pthread_cond_t cond = PTHREAD_COND_INITIALIZER;
+
+    函数pthread_cond_signal()和pthread_cond_broadcast()都可以对参数cond所指定的条件变量而发出信号
+    函数pthread_cond_wait()将阻塞线程，直到收到cond的通知。
+
+    #include <pthread.h>
+    int pthread_cond_signal(pthread *cond);
+    int pthread_cond_broadcast(pthread *cond);
+    int pthread_cond_wait(pthread *cond, pthread_mutex_t *mutex);
+    返回值0表示成功，出错时返回一个正数。
+
+    pthread_cond_signal()和pthread_cond_broadcast()差别：
+        pthread_cond_signal()至少唤醒一条阻塞的线程
+        pthread_cond_broadcast()唤醒所有阻塞的线程
+    pthread_cond_broadcast()总是能产生正确的结果，
+    pthread_cond_signal()更加高效
+
+    int pthread_cond_timedwait(pthread_cond_t *cond, pthread_mutex_t *mutex, const struct timespec *abstime);
+    返回0代表成功，出错返回一个正数。
+    如果指定时间内未收到相关条件变量的通知，则返回ETIMEOUT错误。
