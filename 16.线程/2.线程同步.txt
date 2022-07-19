@@ -44,3 +44,30 @@ https://blog.csdn.net/guotianqing/article/details/79828100
     函数pthread_mutex_unlock()将解锁本线程锁定的互斥量，以下两种操作均是错误的：
         对未锁定的互斥量进行解锁
         解锁其他线程锁定的互斥量
+
+    pthread_mutex_trylock()和pthread_mutex_timelock()
+        如果信号已锁定，执行函数pthread_mutex_trylock()会失败并返回EBUSY错误，其他与pthread_mutex_lock()函数相同。
+        pthread_mutex_timelock()将指定一个时间，来设置线程阻塞时的最大等待时间，如果等待时间已满，且没有获取互斥量的所有权，则返回ETIMEOUT错误
+
+    实际情况中，pthread_mutex_trylock()和pthread_mutex_timelcok()的使用率比pthread_mutex_lock()低很多。
+    大多数良好设计的应用程序中，线程对互斥量的持有时间应该尽可能短，以避免妨碍其他进程的并发执行。
+    如果使用pthread_mutex_trylock()周期性的轮询，对互斥量进行加锁，则可能一直无法锁定该互斥量。因为其他线程可能使用pthread_mutex_lock()。
+
+线程的死锁
+    死锁:两个进程分别持有一把锁，此时又在申请对方的那把锁，两个线程都会阻塞，造成死锁。
+
+    死锁的避免：
+        定义互斥量的层级关系，对资源操作时，必须按规定的顺序进行锁定。
+        线程先使用pthread_mutex_lock()锁定第一个互斥量，再使用pthread_mutex_try()锁定第二个互斥量，如果失败则释放所有互斥量。
+
+动态初始化互斥量
+    静态初始值PTHREAD_MUTEX_INITIALIZER,只能初始化静态且携带默认属性的互斥量。
+    动态的互斥量，或者不使用默认的属性，则使用pthread_mutex_init()进行初始化。
+
+    int pthread_mutex_init(pthread_mutex_t *mutex, const pthread_mutexattr_t *attr);
+    返回值0代表成功，出错返回一个正数。
+
+    参数mutex指定函数执行初始化的目标互斥量。
+    参数attr是pthread_mutexattr_t类型的指针，为NULL时，使用默认属性。在使用attr前，必须对attr进行初始化处理，定义互斥量的属性。
+
+    
